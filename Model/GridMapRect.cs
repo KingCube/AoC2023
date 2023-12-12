@@ -23,7 +23,8 @@ public class GridMapRect
                 map[i,j] = strings[i][j];
     }
 
-    public char this[int x, int y] => map[x, y];
+    public char this[int y, int x] => map[y, x];
+
     public char this[iPair pair] => map[pair.y, pair.x];   
 
 }

@@ -20,26 +20,13 @@ public struct iPair
     public static iPair SW = South + West;
     public static iPair SE = South + East;
 
-    public static List<iPair> CardinalDirections = new List<iPair>()
-    {
-        North, South, East, West
-    };
+    public static List<iPair> CardinalDirections        = new List<iPair>(){North, South, East, West};
 
-    public static List<iPair> CardinalDirectionsNull = new List<iPair>()
-    {
-        Origo, North, South, East, West
-    };
+    public static List<iPair> CardinalDirectionsNull    = new List<iPair>(){Origo, North, South, East, West};
 
-    public static List<iPair> Directions = new List<iPair>()
-    {
-        North, South, East, West, NW, NE, SW,SE
-    };
+    public static List<iPair> Directions                = new List<iPair>(){North, South, East, West, NW, NE, SW,SE};
 
-    public static List<iPair> CardinalValues = new List<iPair>()
-    {
-        Origo, North, South, East, West, NW, NE, SW,SE
-    };
-
+    public static List<iPair> CardinalValues            = new List<iPair>() { Origo, North, South, East, West, NW, NE, SW, SE };
 
     public int x;
     public int y;
@@ -50,15 +37,10 @@ public struct iPair
         this.y = y;
     }
 
-    public static iPair operator +(iPair a, iPair b)
-    {
-        return new iPair(a.y + b.y, a.x + b.x);
-    }
+    public static iPair operator +(iPair a, iPair b) => new iPair(a.y + b.y, a.x + b.x);
 
-    public static iPair operator -(iPair a, iPair b)
-    {
-        return new iPair(a.y - b.y, a.x - b.x);
-    }
+    public static iPair operator -(iPair a, iPair b) => new iPair(a.y - b.y, a.x - b.x);
+
 
 }
 
