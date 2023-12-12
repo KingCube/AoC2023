@@ -1,37 +1,197 @@
 ﻿using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Linq.Expressions;
+using System.Net.Http.Headers;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 
 class Program
 {
+
+    public static long[,,,] memory;
+
     static void Main(string[] args)
     {
+        Dictionary<string, TreeNodeAAA> Nodes = new Dictionary<string, TreeNodeAAA>();
+
         long sum = 0;
         List<string> map = new List<string>();
 
-        StreamReader sr = new StreamReader("C:/Users/Seth/source/repos/AoC2023/Input/day7.txt");
+        StreamReader sr = new StreamReader("C:/Users/Seth/source/repos/AoC2023/Input/day12.txt");
 
-
-        long rowNr = 0;
-
-        List<(string, int)> inputs = new List<(string, int)>();
-
+        int rowNr = 0;
 
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-            inputs.Add(new(input.Split(" ")[0], int.Parse(input.Split(" ")[1])));
+
+            string row = input.Split(" ")[0];
+            string strNums = input.Split(" ")[1];
+
+            bool repeat = true;
+
+            string oldRow = row;
+            string oldNums = strNums;
+
+            if (repeat)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    row +="?" + oldRow;
+                    strNums += "," + oldNums;
+                }
+            }
+            
+            row = row + ".";
+
+
+
+            string[] nums = strNums.Split(",");
+
+            List<int> limits = new List<int>();
+
+            for (int i = 0; i < nums.Length; i++)
+                limits.Add(int.Parse(nums[i]));
+
+            List<int> qs = new List<int>();
+            for (int i = 0; i < row.Length; i++)
+                if (row[i] == '?')
+                    qs.Add(i);
+
+
+            memory = new long[row.Length, 100, 40,2];
+
+            long ans = Flipper(row, limits, 0, 0, 0);
+
+            Console.WriteLine(ans);
+            sum += ans;
         }
 
-        List<(string, int)> orderedInputs = inputs.OrderBy(x => ProcessHand(x.Item1)).ToList();
-
-        for (int i = 0; i < orderedInputs.Count; i++)
-            sum += orderedInputs[i].Item2 * (i+1);
-
+     
 
         Console.WriteLine(sum);
         Console.WriteLine("EoP");
         Console.ReadKey();
+    }
+
+    public static long Flipper(string input, List<int> limits, int pos, int currentLen, int finishedGroups)
+    {
+        long ans = 0;
+
+
+        if (input[pos] == '?')
+        {
+            char[] chars = input.ToCharArray();
+
+            chars[pos] = '#';
+            ans += Flipper(new string(chars), limits, pos, currentLen, finishedGroups);
+
+            chars[pos] = '.';
+            ans += Flipper(new string(chars), limits, pos, currentLen, finishedGroups);
+        }
+        else {
+
+            int newCurrentLen = input[pos] == '.' ? 0 : currentLen + 1;
+            int newFinishedGroup = finishedGroups + (input[pos] == '.' && currentLen > 0 ? 1 : 0);
+
+            //Console.WriteLine("from memory:" + memory[pos, newFinishedGroup, newCurrentLen]);
+
+            int isSpring = input[pos] == '#' ? 1 : 0;
+
+            if (memory[pos, finishedGroups, currentLen, isSpring] == -1)
+                return 0;
+            else if (memory[pos, finishedGroups, currentLen, isSpring] > 0) 
+               return memory[pos, finishedGroups, currentLen, isSpring];
+
+            if (input[pos] == '.')
+            {
+                List<int> newLimits = new List<int>(limits);
+                if (currentLen > 0)
+                {
+                    if (limits[0] != currentLen)
+                    {
+                        memory[pos, finishedGroups, currentLen, isSpring] = -1;
+                        return 0;
+                    }
+
+                    newLimits.RemoveAt(0);
+                }
+
+
+                if (pos == input.Length - 1)
+                {
+                    return (newLimits.Count == 0) ? 1 : 0;
+                }
+
+                ans += Flipper(input, newLimits, pos + 1, newCurrentLen, newFinishedGroup);
+            }
+            else if (input[pos] == '#')
+            {
+                if (limits.Count == 0 || newCurrentLen > limits[0])
+                {
+                    memory[pos, finishedGroups, currentLen, isSpring] = -1;
+                    return 0;
+                }
+
+                ans += Flipper(input, limits, pos + 1, newCurrentLen, newFinishedGroup);
+            }
+
+            if(ans == 0)
+                memory[pos, finishedGroups, currentLen, isSpring] = -1;
+            else
+                memory[pos, finishedGroups, currentLen, isSpring] = ans;
+
+        }
+        
+
+        return ans;
+    }
+
+
+
+
+
+
+    public static List<int> GetDiffList(List<int> nums) {
+        List<int> diffs = new List<int>();
+
+        for(int i = 1; i < nums.Count; i++)
+            diffs.Add(nums[i] - nums[i-1]);
+
+        if(diffs.Count(x=> x == 0) == diffs.Count())
+        {
+            diffs.Add(0);
+            return diffs;
+        }
+        else
+        {
+            List<int> subDiffs = GetDiffList(diffs);
+            if(subDiffs.Count == 0)
+            {
+                diffs.Add(0);
+            }
+            else
+            {
+                diffs.Add(subDiffs[diffs.Count() - 1] + diffs[diffs.Count-1]);
+            }
+
+            return diffs;
+        }
+
+    }
+
+
+    public static void PrintMap(char[,] map, int startRow = 0, int EndRow = -1)
+    {
+        int finalEndRow = EndRow == -1 ? map.GetLength(0) : EndRow;
+        for (int i = startRow; i < finalEndRow; i++)
+        {
+            for(int j = 0; j < map.GetLength(1); j++)
+                Console.Write(map[i, j] + " ");
+
+            Console.WriteLine();
+        }
     }
 
 
