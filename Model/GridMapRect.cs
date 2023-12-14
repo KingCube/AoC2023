@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,7 +26,50 @@ public class GridMapRect
 
     public char this[int y, int x] => map[y, x];
 
-    public char this[iPair pair] => map[pair.y, pair.x];   
+    public int Rows => map.GetLength(0);
+    public int Cols => map.GetLength(1);
+
+    public char this[iPair pair]
+    {
+        get
+        {
+            return map[pair.y, pair.x];
+        }
+        set
+        {
+            map[pair.y, pair.x] = value;
+        }
+    }
+
+    public bool inBounds(iPair pair)
+    {
+        return pair.y >= 0 && pair.y < map.GetLength(0) && pair.x >= 0 && pair.x < map.GetLength(1);
+    }
+
+    public void Print()
+    {
+        for(int i = 0; i < map.GetLength(0); i++)
+        {
+            Console.WriteLine();
+            for(int j = 0;j < map.GetLength(1); j++)
+                Console.Write(map[i,j]);
+        }
+
+        Console.WriteLine();
+    }
+
+    public string FlattenMap()
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < map.GetLength(0); i++)
+        {
+            for (int j = 0; j < map.GetLength(1); j++)
+                sb.Append(map[i,j]);
+        }
+
+        return sb.ToString();
+
+    }
 
 }
 

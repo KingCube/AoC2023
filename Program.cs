@@ -18,62 +18,211 @@ class Program
         long sum = 0;
         List<string> map = new List<string>();
 
-        StreamReader sr = new StreamReader("C:/Users/Seth/source/repos/AoC2023/Input/day12.txt");
+        StreamReader sr = new StreamReader("C:/Users/Seth/source/repos/AoC2023/Input/day14.txt");
 
         int rowNr = 0;
 
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-
-            string row = input.Split(" ")[0];
-            string strNums = input.Split(" ")[1];
-
-            bool repeat = true;
-
-            string oldRow = row;
-            string oldNums = strNums;
-
-            if (repeat)
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    row +="?" + oldRow;
-                    strNums += "," + oldNums;
-                }
-            }
-            
-            row = row + ".";
-
-
-
-            string[] nums = strNums.Split(",");
-
-            List<int> limits = new List<int>();
-
-            for (int i = 0; i < nums.Length; i++)
-                limits.Add(int.Parse(nums[i]));
-
-            List<int> qs = new List<int>();
-            for (int i = 0; i < row.Length; i++)
-                if (row[i] == '?')
-                    qs.Add(i);
-
-
-            memory = new long[row.Length, 100, 40,2];
-
-            long ans = Flipper(row, limits, 0, 0, 0);
-
-            Console.WriteLine(ans);
-            sum += ans;
+            map.Add(input);
         }
 
-     
+        GridMapRect gMap = new GridMapRect(map);
+
+        List<string> flatMaps = new List<string>();
+        for(int i = 0; i < 440; i++)
+        {
+            RollNorth(gMap);
+            RollWest(gMap);
+            RollSouth(gMap);
+            RollEast(gMap);
+
+            string flatMap = gMap.FlattenMap();
+            if (flatMaps.Contains(flatMap))
+                Console.WriteLine("index: " + (i+1) + " :" + flatMaps.IndexOf(flatMap));
+            else
+                flatMaps.Add(flatMap);
+                  
+        }
+
+
+
+        
+        for (int i = 0; i < map.Count; i++)
+        {
+            for (int j = 0; j < map[0].Length; j++)
+            {
+                if (gMap[i, j] == 'O')
+                {
+                    sum += map.Count - i;
+                }
+            }
+        }
+
+
+
+
+
 
         Console.WriteLine(sum);
         Console.WriteLine("EoP");
         Console.ReadKey();
     }
+
+
+    public static void RollNorth(GridMapRect gMap)
+    {
+        for (int i = 0; i < gMap.Rows; i++)
+        {
+            for (int j = 0; j < gMap.Cols; j++)
+            {
+                if (gMap[i, j] == 'O')
+                {
+                    iPair cursor = new iPair(i, j);
+                    while (true)
+                    {
+                        iPair oldCursor = cursor;
+                        cursor += iPair.North;
+                        if (!gMap.inBounds(cursor) || gMap[cursor] != '.') break;
+
+                        gMap[cursor] = 'O';
+                        gMap[oldCursor] = '.';
+                    }
+                }
+            }
+        }
+    }
+
+    public static void RollSouth(GridMapRect gMap)
+    {
+        for (int i = gMap.Rows -1 ; i >= 0; i--)
+        {
+            for (int j = 0; j < gMap.Cols; j++)
+            {
+                if (gMap[i, j] == 'O')
+                {
+                    iPair cursor = new iPair(i, j);
+                    while (true)
+                    {
+                        iPair oldCursor = cursor;
+                        cursor += iPair.South;
+                        if (!gMap.inBounds(cursor) || gMap[cursor] != '.') break;
+
+                        gMap[cursor] = 'O';
+                        gMap[oldCursor] = '.';
+                    }
+                }
+            }
+        }
+    }
+
+    public static void RollEast(GridMapRect gMap)
+    {
+        for (int i = gMap.Cols -1 ; i >= 0; i--)
+        {
+            for (int j = 0; j < gMap.Rows; j++)
+            {
+                if (gMap[j, i] == 'O')
+                {
+                    iPair cursor = new iPair(j, i);
+                    while (true)
+                    {
+                        iPair oldCursor = cursor;
+                        cursor += iPair.East;
+                        if (!gMap.inBounds(cursor) || gMap[cursor] != '.') break;
+
+                        gMap[cursor] = 'O';
+                        gMap[oldCursor] = '.';
+                    }
+                }
+            }
+        }
+    }
+
+    public static void RollWest(GridMapRect gMap)
+    {
+        for (int i = 1; i < gMap.Cols; i++)
+        {
+            for (int j = 0; j < gMap.Rows; j++)
+            {
+                if (gMap[j, i] == 'O')
+                {
+                    iPair cursor = new iPair(j, i);
+                    while (true)
+                    {
+                        iPair oldCursor = cursor;
+                        cursor += iPair.West;
+                        if (!gMap.inBounds(cursor) || gMap[cursor] != '.') break;
+
+                        gMap[cursor] = 'O';
+                        gMap[oldCursor] = '.';
+                    }
+                }
+            }
+        }
+    }
+
+    public static int FindMirror(List<string> map)
+    {
+        // start horizontal
+        for (int i = 1; i < map.Count; i++)
+        {
+            int bRow = i - 1;
+            int uRow = i;
+
+            int diffs = 0;
+
+            while (bRow >= 0 && uRow < map.Count)
+            {
+                for(int r = 0; r < map[0].Length; r++)
+                {
+                    if (map[bRow][r] != map[uRow][r])
+                    {
+                        diffs++;
+                    }
+                }
+
+                bRow--;
+                uRow++;
+            }
+
+            if(diffs == 1)
+            {
+                return 100 * i;
+            }
+        }
+
+        // vertical
+        for(int j = 1; j < map[0].Length; j++)
+        {
+            int bCol = j - 1;
+            int uCol = j;
+
+            int diffs = 0;
+
+            while (bCol >= 0 && uCol < map[0].Length)
+            {
+                for(int c = 0; c < map.Count; c++)
+                {
+                    if (map[c][bCol] != map[c][uCol])
+                    {
+                        diffs++;
+                    }
+                }
+
+                bCol--;
+                uCol++;
+            }
+
+            if (diffs == 1) return j;
+        }
+
+        return 0;
+    }
+    
+
+
 
     public static long Flipper(string input, List<int> limits, int pos, int currentLen, int finishedGroups)
     {

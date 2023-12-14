@@ -10,10 +10,10 @@ public struct iPair
 {
     public static iPair Origo = new iPair(0, 0);
 
-    public static iPair North = new iPair(0, -1);
-    public static iPair South = new iPair(0, 1);
-    public static iPair East = new iPair(1, 0);
-    public static iPair West = new iPair(-1, 0);
+    public static iPair North = new iPair(-1, 0);
+    public static iPair South = new iPair(1, 0);
+    public static iPair East = new iPair(0, 1);
+    public static iPair West = new iPair(0, -1);
 
     public static iPair NW = North + West;
     public static iPair NE = North + East;
