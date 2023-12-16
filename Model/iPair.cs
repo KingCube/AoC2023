@@ -41,6 +41,16 @@ public struct iPair
 
     public static iPair operator -(iPair a, iPair b) => new iPair(a.y - b.y, a.x - b.x);
 
+    public static bool operator ==(iPair a, iPair b)
+    {
+        return a.y == b.y && a.x == b.x;
+    }
+
+    public static bool operator !=(iPair a, iPair b)
+    {
+        return a.y != b.y || a.x != b.x;
+    }
+
 
 }
 

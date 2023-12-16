@@ -17,8 +17,8 @@ class Program
 
         long sum = 0;
         List<string> map = new List<string>();
+        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day16.txt");
 
-        StreamReader sr = new StreamReader("C:/Users/Seth/source/repos/AoC2023/Input/day14.txt");
 
         int rowNr = 0;
 
@@ -30,44 +30,110 @@ class Program
 
         GridMapRect gMap = new GridMapRect(map);
 
-        List<string> flatMaps = new List<string>();
-        for(int i = 0; i < 440; i++)
-        {
-            RollNorth(gMap);
-            RollWest(gMap);
-            RollSouth(gMap);
-            RollEast(gMap);
+        int bestAns = -1;
 
-            string flatMap = gMap.FlattenMap();
-            if (flatMaps.Contains(flatMap))
-                Console.WriteLine("index: " + (i+1) + " :" + flatMaps.IndexOf(flatMap));
-            else
-                flatMaps.Add(flatMap);
-                  
+        for(int i = 0; i < gMap.Cols; i++)
+        {
+            int ans = GetEnergized(gMap, (new iPair(-1, i), iPair.South));
+            if (ans > bestAns) bestAns = ans;
+
+            ans = GetEnergized(gMap, (new iPair(gMap.Rows, i), iPair.North));
+            if (ans > bestAns) bestAns = ans;
+        }
+
+        for (int i = 0; i < gMap.Rows; i++)
+        {
+            int ans = GetEnergized(gMap, (new iPair(i, -1), iPair.East));
+            if (ans > bestAns) bestAns = ans;
+
+            ans = GetEnergized(gMap, (new iPair(i, gMap.Cols), iPair.West));
+            if (ans > bestAns) bestAns = ans;
         }
 
 
 
-        
-        for (int i = 0; i < map.Count; i++)
-        {
-            for (int j = 0; j < map[0].Length; j++)
-            {
-                if (gMap[i, j] == 'O')
-                {
-                    sum += map.Count - i;
-                }
-            }
-        }
-
-
-
-
-
-
-        Console.WriteLine(sum);
+        Console.WriteLine(bestAns);
         Console.WriteLine("EoP");
         Console.ReadKey();
+    }
+
+    public static int GetEnergized(GridMapRect gMap, (iPair pos, iPair dir) origo)
+    {
+        HashSet<iPair> energized = new HashSet<iPair>();
+        HashSet<(iPair, iPair)> visited = new HashSet<(iPair pos, iPair dir)>();
+
+        List<(iPair, iPair)> frontier = new List<(iPair pos, iPair dir)>();
+        frontier.Add(origo);
+        
+
+        while (frontier.Count() != 0)
+        {
+            List<(iPair, iPair)> newFrontier = new List<(iPair pos, iPair dir)>();
+
+            foreach ((iPair pos, iPair dir) cur in frontier)
+            {
+                if (visited.Contains(cur)) continue;
+                visited.Add(cur);
+
+                iPair newPos = cur.pos + cur.dir;
+                if (!gMap.inBounds(newPos)) continue;
+
+                char c = gMap[newPos];
+                if (c == '.')
+                    newFrontier.Add((newPos, cur.dir));
+                else if (c == '/')
+                {
+                    if (cur.dir == iPair.East)
+                        newFrontier.Add((newPos, iPair.North));
+                    else if (cur.dir == iPair.South)
+                        newFrontier.Add((newPos, iPair.West));
+                    else if (cur.dir == iPair.West)
+                        newFrontier.Add((newPos, iPair.South));
+                    else if (cur.dir == iPair.North)
+                        newFrontier.Add((newPos, iPair.East));
+                }
+                else if (c == '\\')
+                {
+                    if (cur.dir == iPair.East)
+                        newFrontier.Add((newPos, iPair.South));
+                    else if (cur.dir == iPair.South)
+                        newFrontier.Add((newPos, iPair.East));
+                    else if (cur.dir == iPair.West)
+                        newFrontier.Add((newPos, iPair.North));
+                    else if (cur.dir == iPair.North)
+                        newFrontier.Add((newPos, iPair.West));
+                }
+                else if (c == '-')
+                {
+                    if (cur.dir == iPair.East || cur.dir == iPair.West)
+                        newFrontier.Add((newPos, cur.dir));
+                    else
+                    {
+                        newFrontier.Add((newPos, iPair.West));
+                        newFrontier.Add((newPos, iPair.East));
+                    }
+                }
+                else if (c == '|')
+                {
+                    if (cur.dir == iPair.North || cur.dir == iPair.South)
+                        newFrontier.Add((newPos, cur.dir));
+                    else
+                    {
+                        newFrontier.Add((newPos, iPair.North));
+                        newFrontier.Add((newPos, iPair.South));
+                    }
+                }
+            }
+
+
+            foreach ((iPair, iPair) c in newFrontier)
+                energized.Add(c.Item1);
+
+            frontier = newFrontier;
+        }
+
+        return energized.Count();
+
     }
 
 
