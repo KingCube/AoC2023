@@ -17,8 +17,9 @@ class Program
 
         long sum = 0;
         List<string> map = new List<string>();
-        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day16.txt");
+        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day17.txt");
 
+        HashSet<(iPair, iPair, int)> visited = new HashSet<(iPair, iPair, int)>();
 
         int rowNr = 0;
 
@@ -27,32 +28,63 @@ class Program
             string input = sr.ReadLine();
             map.Add(input);
         }
-
         GridMapRect gMap = new GridMapRect(map);
+        iPair goal = new iPair(map.Count - 1, map[0].Length - 1);
 
-        int bestAns = -1;
 
-        for(int i = 0; i < gMap.Cols; i++)
+        PriorityQueue<LavaFlowTrackker, int> pq = new PriorityQueue<LavaFlowTrackker, int>();
+        pq.Enqueue(new LavaFlowTrackker() { pos = new iPair(0, 0), dir = iPair.East, dCount = 0, sum = 0 },0);
+        pq.Enqueue(new LavaFlowTrackker() { pos = new iPair(0, 0), dir = iPair.South, dCount = 0, sum = 0 }, 0);
+
+
+        bool ansFound = false;
+        while(pq.Count != 0 && !ansFound)
         {
-            int ans = GetEnergized(gMap, (new iPair(-1, i), iPair.South));
-            if (ans > bestAns) bestAns = ans;
+            LavaFlowTrackker current = pq.Dequeue();
 
-            ans = GetEnergized(gMap, (new iPair(gMap.Rows, i), iPair.North));
-            if (ans > bestAns) bestAns = ans;
+            if(current.pos == goal && current.dCount >= 4)
+            {
+                sum = current.sum;
+                break;
+            }
+
+            List<iPair> dirs = new List<iPair>();
+
+            if (current.dCount < 4)
+            {
+                dirs.Add(current.dir);
+            }
+            else
+            {
+                dirs.AddRange(iPair.CardinalDirections);
+                dirs.Remove(current.dir * -1);
+            }
+
+            if (current.dCount == 10)
+                dirs.Remove(current.dir);
+            
+
+            foreach(iPair dir in dirs)
+            {
+                iPair newPos = current.pos + dir;
+                if (!gMap.inBounds(newPos)) continue;
+
+
+                int val = int.Parse(gMap[newPos].ToString());
+                int newDCount = current.dir == dir ? current.dCount + 1 : 1;
+                if (visited.Contains((newPos, dir, newDCount))) continue;
+                visited.Add((newPos, dir, newDCount));
+
+                LavaFlowTrackker lf = new LavaFlowTrackker() { pos = newPos, dir = dir, dCount = newDCount, sum = current.sum + val };
+
+                pq.Enqueue(lf, current.sum + val);
+            }
         }
 
-        for (int i = 0; i < gMap.Rows; i++)
-        {
-            int ans = GetEnergized(gMap, (new iPair(i, -1), iPair.East));
-            if (ans > bestAns) bestAns = ans;
-
-            ans = GetEnergized(gMap, (new iPair(i, gMap.Cols), iPair.West));
-            if (ans > bestAns) bestAns = ans;
-        }
 
 
 
-        Console.WriteLine(bestAns);
+        Console.WriteLine(sum);
         Console.WriteLine("EoP");
         Console.ReadKey();
     }

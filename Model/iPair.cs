@@ -46,6 +46,8 @@ public struct iPair
         return a.y == b.y && a.x == b.x;
     }
 
+    public static iPair operator *(iPair a, int mult) => new iPair(a.y*mult, a.x*mult);
+
     public static bool operator !=(iPair a, iPair b)
     {
         return a.y != b.y || a.x != b.x;
