@@ -10,8 +10,8 @@ public class LavaFlowTrackker
     public int sum;
     public int dCount;
 
-    public iPair pos;
-    public iPair dir;
+    public Vector2 pos;
+    public Vector2 dir;
 
 
 }

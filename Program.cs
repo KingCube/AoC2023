@@ -1,9 +1,12 @@
-﻿using System.Diagnostics.Metrics;
+﻿using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 
 
 class Program
@@ -13,101 +16,122 @@ class Program
 
     static void Main(string[] args)
     {
-        Dictionary<string, TreeNodeAAA> Nodes = new Dictionary<string, TreeNodeAAA>();
-
+     
         long sum = 0;
+        int steps = 1000;
         List<string> map = new List<string>();
-        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day17.txt");
+        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day20.txt");
 
-        HashSet<(iPair, iPair, int)> visited = new HashSet<(iPair, iPair, int)>();
+        List<(Vector2 pos, List<Vector2> offSets)> frontier = new List<(Vector2 pos, List<Vector2> offSets)>();
 
         int rowNr = 0;
 
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-            map.Add(input);
+          map.Add(input);
+            for (int i = 0; i < input.Length; i++)
+                if (input[i] == 'S')
+                    frontier.Add((new Vector2(rowNr, i), new List<Vector2>()));
+
+            rowNr++;
         }
+
+        frontier[0].offSets.Add(new Vector2(0, 0));
+
         GridMapRect gMap = new GridMapRect(map);
-        iPair goal = new iPair(map.Count - 1, map[0].Length - 1);
+
+        Console.WriteLine(gMap.Rows + "," + gMap.Cols);
+
+        List<Vector2>[,] markers = new List<Vector2>[gMap.Rows, gMap.Cols];
+        for (int i = 0; i < gMap.Rows; i++)
+            for (int j = 0; j < gMap.Cols; j++)
+                markers[i, j] = new List<Vector2>();
+
+        HashSet<Vector2> evens = new HashSet<Vector2>();
+        HashSet<Vector2> odds = new HashSet<Vector2>();
+        HashSet<Vector2> front = new HashSet<Vector2>();
+
+        front.Add((frontier[0].pos));
 
 
-        PriorityQueue<LavaFlowTrackker, int> pq = new PriorityQueue<LavaFlowTrackker, int>();
-        pq.Enqueue(new LavaFlowTrackker() { pos = new iPair(0, 0), dir = iPair.East, dCount = 0, sum = 0 },0);
-        pq.Enqueue(new LavaFlowTrackker() { pos = new iPair(0, 0), dir = iPair.South, dCount = 0, sum = 0 }, 0);
 
 
-        bool ansFound = false;
-        while(pq.Count != 0 && !ansFound)
+        for (int i = 0; i < steps; i++)
         {
-            LavaFlowTrackker current = pq.Dequeue();
-
-            if(current.pos == goal && current.dCount >= 4)
-            {
-                sum = current.sum;
-                break;
-            }
-
-            List<iPair> dirs = new List<iPair>();
-
-            if (current.dCount < 4)
-            {
-                dirs.Add(current.dir);
-            }
-            else
-            {
-                dirs.AddRange(iPair.CardinalDirections);
-                dirs.Remove(current.dir * -1);
-            }
-
-            if (current.dCount == 10)
-                dirs.Remove(current.dir);
+            HashSet<Vector2> newFront = new HashSet<Vector2>();
+            HashSet<Vector2> oddsEvens = (i + 1) % 2 == 0 ? evens : odds;
             
-
-            foreach(iPair dir in dirs)
+            foreach(Vector2 pos in front)
             {
-                iPair newPos = current.pos + dir;
-                if (!gMap.inBounds(newPos)) continue;
+                foreach(Vector2 dir in Vector2.CardinalDirections)
+                {
+                    Vector2 newPos = pos + dir;
+                    if (front.Contains(newPos)) continue;
+                    if (oddsEvens.Contains(newPos)) continue;
+                    Vector2 gPos = newPos;
 
+                    if (!gMap.inBounds(newPos))
+                    {
+                        gPos = new Vector2((gPos.y + gMap.Rows * 1000) % gMap.Rows, (gPos.x + gMap.Cols * 1000) % gMap.Cols);
+                    }
 
-                int val = int.Parse(gMap[newPos].ToString());
-                int newDCount = current.dir == dir ? current.dCount + 1 : 1;
-                if (visited.Contains((newPos, dir, newDCount))) continue;
-                visited.Add((newPos, dir, newDCount));
+                    if (gMap[gPos] == '#') continue;
 
-                LavaFlowTrackker lf = new LavaFlowTrackker() { pos = newPos, dir = dir, dCount = newDCount, sum = current.sum + val };
-
-                pq.Enqueue(lf, current.sum + val);
+                    newFront.Add(newPos);
+                    oddsEvens.Add(newPos);
+                }
             }
+
+            if (((i+1) % 131 == 65)) Console.WriteLine(oddsEvens.Count());
+            if (i % 10 == 0) Console.WriteLine("i: " + i);
+            front = newFront;
         }
 
-
-
-
-        Console.WriteLine(sum);
+        Console.WriteLine(frontier.Sum(x => x.offSets.Count()));
         Console.WriteLine("EoP");
         Console.ReadKey();
     }
 
-    public static int GetEnergized(GridMapRect gMap, (iPair pos, iPair dir) origo)
-    {
-        HashSet<iPair> energized = new HashSet<iPair>();
-        HashSet<(iPair, iPair)> visited = new HashSet<(iPair pos, iPair dir)>();
 
-        List<(iPair, iPair)> frontier = new List<(iPair pos, iPair dir)>();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public static int GetEnergized(GridMapRect gMap, (Vector2 pos, Vector2 dir) origo)
+    {
+        HashSet<Vector2> energized = new HashSet<Vector2>();
+        HashSet<(Vector2, Vector2)> visited = new HashSet<(Vector2 pos, Vector2 dir)>();
+
+        List<(Vector2, Vector2)> frontier = new List<(Vector2 pos, Vector2 dir)>();
         frontier.Add(origo);
         
 
         while (frontier.Count() != 0)
         {
-            List<(iPair, iPair)> newFrontier = new List<(iPair pos, iPair dir)>();
+            List<(Vector2, Vector2)> newFrontier = new List<(Vector2 pos, Vector2 dir)>();
 
-            foreach ((iPair pos, iPair dir) cur in frontier)
+            foreach ((Vector2 pos, Vector2 dir) cur in frontier)
             {
                 if (visited.Contains(cur)) continue;
                 visited.Add(cur);
 
-                iPair newPos = cur.pos + cur.dir;
+                Vector2 newPos = cur.pos + cur.dir;
                 if (!gMap.inBounds(newPos)) continue;
 
                 char c = gMap[newPos];
@@ -115,50 +139,50 @@ class Program
                     newFrontier.Add((newPos, cur.dir));
                 else if (c == '/')
                 {
-                    if (cur.dir == iPair.East)
-                        newFrontier.Add((newPos, iPair.North));
-                    else if (cur.dir == iPair.South)
-                        newFrontier.Add((newPos, iPair.West));
-                    else if (cur.dir == iPair.West)
-                        newFrontier.Add((newPos, iPair.South));
-                    else if (cur.dir == iPair.North)
-                        newFrontier.Add((newPos, iPair.East));
+                    if (cur.dir == Vector2.East)
+                        newFrontier.Add((newPos, Vector2.North));
+                    else if (cur.dir == Vector2.South)
+                        newFrontier.Add((newPos, Vector2.West));
+                    else if (cur.dir == Vector2.West)
+                        newFrontier.Add((newPos, Vector2.South));
+                    else if (cur.dir == Vector2.North)
+                        newFrontier.Add((newPos, Vector2.East));
                 }
                 else if (c == '\\')
                 {
-                    if (cur.dir == iPair.East)
-                        newFrontier.Add((newPos, iPair.South));
-                    else if (cur.dir == iPair.South)
-                        newFrontier.Add((newPos, iPair.East));
-                    else if (cur.dir == iPair.West)
-                        newFrontier.Add((newPos, iPair.North));
-                    else if (cur.dir == iPair.North)
-                        newFrontier.Add((newPos, iPair.West));
+                    if (cur.dir == Vector2.East)
+                        newFrontier.Add((newPos, Vector2.South));
+                    else if (cur.dir == Vector2.South)
+                        newFrontier.Add((newPos, Vector2.East));
+                    else if (cur.dir == Vector2.West)
+                        newFrontier.Add((newPos, Vector2.North));
+                    else if (cur.dir == Vector2.North)
+                        newFrontier.Add((newPos, Vector2.West));
                 }
                 else if (c == '-')
                 {
-                    if (cur.dir == iPair.East || cur.dir == iPair.West)
+                    if (cur.dir == Vector2.East || cur.dir == Vector2.West)
                         newFrontier.Add((newPos, cur.dir));
                     else
                     {
-                        newFrontier.Add((newPos, iPair.West));
-                        newFrontier.Add((newPos, iPair.East));
+                        newFrontier.Add((newPos, Vector2.West));
+                        newFrontier.Add((newPos, Vector2.East));
                     }
                 }
                 else if (c == '|')
                 {
-                    if (cur.dir == iPair.North || cur.dir == iPair.South)
+                    if (cur.dir == Vector2.North || cur.dir == Vector2.South)
                         newFrontier.Add((newPos, cur.dir));
                     else
                     {
-                        newFrontier.Add((newPos, iPair.North));
-                        newFrontier.Add((newPos, iPair.South));
+                        newFrontier.Add((newPos, Vector2.North));
+                        newFrontier.Add((newPos, Vector2.South));
                     }
                 }
             }
 
 
-            foreach ((iPair, iPair) c in newFrontier)
+            foreach ((Vector2, Vector2) c in newFrontier)
                 energized.Add(c.Item1);
 
             frontier = newFrontier;
@@ -177,11 +201,11 @@ class Program
             {
                 if (gMap[i, j] == 'O')
                 {
-                    iPair cursor = new iPair(i, j);
+                    Vector2 cursor = new Vector2(i, j);
                     while (true)
                     {
-                        iPair oldCursor = cursor;
-                        cursor += iPair.North;
+                        Vector2 oldCursor = cursor;
+                        cursor += Vector2.North;
                         if (!gMap.inBounds(cursor) || gMap[cursor] != '.') break;
 
                         gMap[cursor] = 'O';
@@ -200,11 +224,11 @@ class Program
             {
                 if (gMap[i, j] == 'O')
                 {
-                    iPair cursor = new iPair(i, j);
+                    Vector2 cursor = new Vector2(i, j);
                     while (true)
                     {
-                        iPair oldCursor = cursor;
-                        cursor += iPair.South;
+                        Vector2 oldCursor = cursor;
+                        cursor += Vector2.South;
                         if (!gMap.inBounds(cursor) || gMap[cursor] != '.') break;
 
                         gMap[cursor] = 'O';
@@ -223,11 +247,11 @@ class Program
             {
                 if (gMap[j, i] == 'O')
                 {
-                    iPair cursor = new iPair(j, i);
+                    Vector2 cursor = new Vector2(j, i);
                     while (true)
                     {
-                        iPair oldCursor = cursor;
-                        cursor += iPair.East;
+                        Vector2 oldCursor = cursor;
+                        cursor += Vector2.East;
                         if (!gMap.inBounds(cursor) || gMap[cursor] != '.') break;
 
                         gMap[cursor] = 'O';
@@ -246,11 +270,11 @@ class Program
             {
                 if (gMap[j, i] == 'O')
                 {
-                    iPair cursor = new iPair(j, i);
+                    Vector2 cursor = new Vector2(j, i);
                     while (true)
                     {
-                        iPair oldCursor = cursor;
-                        cursor += iPair.West;
+                        Vector2 oldCursor = cursor;
+                        cursor += Vector2.West;
                         if (!gMap.inBounds(cursor) || gMap[cursor] != '.') break;
 
                         gMap[cursor] = 'O';

@@ -24,12 +24,13 @@ public class GridMapRect
                 map[i,j] = strings[i][j];
     }
 
+
     public char this[int y, int x] => map[y, x];
 
     public int Rows => map.GetLength(0);
     public int Cols => map.GetLength(1);
 
-    public char this[iPair pair]
+    public char this[Vector2 pair]
     {
         get
         {
@@ -41,7 +42,7 @@ public class GridMapRect
         }
     }
 
-    public bool inBounds(iPair pair)
+    public bool inBounds(Vector2 pair)
     {
         return pair.y >= 0 && pair.y < map.GetLength(0) && pair.x >= 0 && pair.x < map.GetLength(1);
     }
