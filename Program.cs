@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Linq.Expressions;
@@ -7,90 +10,170 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
+using System.Runtime.Serialization;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading;
 
 
 class Program
 {
 
-    public static long[,,,] memory;
-
     static void Main(string[] args)
     {
      
         long sum = 0;
-        int steps = 1000;
+
         List<string> map = new List<string>();
-        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day20.txt");
+        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day21_5x.txt");
 
-        List<(Vector2 pos, List<Vector2> offSets)> frontier = new List<(Vector2 pos, List<Vector2> offSets)>();
+        HashSet<Vector2> seen = new HashSet<Vector2>();
+        HashSet<Vector2> counted = new HashSet<Vector2>();
 
-        int rowNr = 0;
 
+        int cRow = 0;
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-          map.Add(input);
-            for (int i = 0; i < input.Length; i++)
-                if (input[i] == 'S')
-                    frontier.Add((new Vector2(rowNr, i), new List<Vector2>()));
+            Vector2 start = new Vector2(input.Split(" -> ")[0],false);
+            Vector2 end = new Vector2(input.Split(" -> ")[1], false);
 
-            rowNr++;
+            bool isDiagonal = start.x != end.x && start.y != end.y;
+
+            long minX = Math.Min(start.x, end.x);
+            long maxX = Math.Max(start.x, end.x);
+            long minY = Math.Min(start.y, end.y);
+            long maxY = Math.Max(start.y, end.y);
+
+            for (long i = 0; i <= Math.Max(maxX-minX, maxY-minY); i++)
+            {
+                Vector2 cur = new Vector2(
+                    minY + (minY == maxY ? 0 : i),
+                    minX + (minX == maxX ? 0 : i)
+                ) ;
+
+                
+                if (seen.Contains(cur) && !counted.Contains(cur))
+                {
+                    counted.Add(cur);
+                    sum++;
+                }
+                else
+                    seen.Add(cur);
+            }
+
         }
 
-        frontier[0].offSets.Add(new Vector2(0, 0));
+   
+        Console.WriteLine(sum);
+        Console.WriteLine("EoP");
+        Console.ReadKey();
+    }
 
-        GridMapRect gMap = new GridMapRect(map);
-
-        Console.WriteLine(gMap.Rows + "," + gMap.Cols);
-
-        List<Vector2>[,] markers = new List<Vector2>[gMap.Rows, gMap.Cols];
-        for (int i = 0; i < gMap.Rows; i++)
-            for (int j = 0; j < gMap.Cols; j++)
-                markers[i, j] = new List<Vector2>();
-
-        HashSet<Vector2> evens = new HashSet<Vector2>();
-        HashSet<Vector2> odds = new HashSet<Vector2>();
-        HashSet<Vector2> front = new HashSet<Vector2>();
-
-        front.Add((frontier[0].pos));
-
-
-
-
-        for (int i = 0; i < steps; i++)
+    public static int BinaryToInt(string data)
+    {
+        Console.WriteLine("Calculating binary on:" + data);
+        int sum = 0;
+        for (int i = 0; i < data.Length; i++)
         {
-            HashSet<Vector2> newFront = new HashSet<Vector2>();
-            HashSet<Vector2> oddsEvens = (i + 1) % 2 == 0 ? evens : odds;
+            int c = data.Length - i - 1;
+            sum += int.Parse(data[c].ToString())*(int)Math.Pow(2, i);
+        }
+        return sum;
+    }
+
+
+    public static int DivideGraph(List<(string, string)> allEdges, List<string> selected, List<(string, string)> outEdges)
+    {
+        if (outEdges.Count == 3) return selected.Count;
+
+        List<string> orderedOut = outEdges.Select(x => x.Item1).Where(x=> !selected.Contains(x)).ToList();
+        orderedOut.AddRange(outEdges.Select(x => x.Item2).Where(x => !selected.Contains(x) && !orderedOut.Contains(x)).ToList());
+
+        List<string> orderedOut2 = orderedOut.OrderByDescending(x => outEdges.Count(o => o.Item1 == x) + outEdges.Count(o => o.Item2 == x)).ToList();
+
+        Console.WriteLine(selected.Count);
+        for(int i = 0; i < orderedOut2.Count; i++)
+        {
+            List<string> newSelected = new List<string>(selected);
+            string newNode = orderedOut2[i];
             
-            foreach(Vector2 pos in front)
+            newSelected.Add(newNode);
+
+            List<(string, string)> newOutEdges = new List<(string, string)>();
+
+            // remove intra connections
+            foreach((string, string) e in outEdges)
             {
-                foreach(Vector2 dir in Vector2.CardinalDirections)
+                if (newSelected.Contains(e.Item1) && newSelected.Contains(e.Item2)) continue;
+                newOutEdges.Add(e);
+            }
+
+            // add new out
+            foreach((string, string) e in allEdges)
+            {
+                if(
+                    (e.Item1 == newNode && !newSelected.Contains(e.Item2)) 
+                    ||
+                    (e.Item2 == newNode && !newSelected.Contains(e.Item1))) 
+                        newOutEdges.Add(e); 
+            }
+            
+
+            int ans = DivideGraph(allEdges, newSelected,  newOutEdges);
+            if(ans != - 1) return ans;
+        }
+
+        return -1;
+    }
+
+
+
+    public static List<string> Connected(List<(string, string)> edges, string root)
+    {
+        List<string> retList = new List<string>();
+
+        List<string> frontier = new List<string>();
+        frontier.Add(root);
+        retList.Add(root);
+
+        while(frontier.Count != 0)
+        {
+            List<string> newFront = new List<string>();
+
+            foreach(string s in frontier)
+            {
+                foreach(string l in edges.Where(x=> x.Item1 == s).Select(x => x.Item2).ToList())
                 {
-                    Vector2 newPos = pos + dir;
-                    if (front.Contains(newPos)) continue;
-                    if (oddsEvens.Contains(newPos)) continue;
-                    Vector2 gPos = newPos;
+                    if (retList.Contains(l) || newFront.Contains(l)) continue;
+                    newFront.Add(l);
+                }
 
-                    if (!gMap.inBounds(newPos))
-                    {
-                        gPos = new Vector2((gPos.y + gMap.Rows * 1000) % gMap.Rows, (gPos.x + gMap.Cols * 1000) % gMap.Cols);
-                    }
-
-                    if (gMap[gPos] == '#') continue;
-
-                    newFront.Add(newPos);
-                    oddsEvens.Add(newPos);
+                foreach (string l in edges.Where(x => x.Item2 == s).Select(x => x.Item1).ToList())
+                {
+                    if (retList.Contains(l) || newFront.Contains(l)) continue;
+                    newFront.Add(l);
                 }
             }
 
-            if (((i+1) % 131 == 65)) Console.WriteLine(oddsEvens.Count());
-            if (i % 10 == 0) Console.WriteLine("i: " + i);
-            front = newFront;
+            retList.AddRange(newFront);
+            frontier = newFront;
         }
 
-        Console.WriteLine(frontier.Sum(x => x.offSets.Count()));
-        Console.WriteLine("EoP");
-        Console.ReadKey();
+        return retList;
+    }
+
+
+    public static bool isForwardTime(Vector3 pos, Vector3 vel, double xVal, double yVal)
+    {
+        if (vel.x >= 0 && xVal < pos.x) return false;
+        if (vel.x < 0 && xVal > pos.x) return false;
+        if (vel.y >= 0 && yVal < pos.y) return false;
+        if (vel.y < 0 && yVal > pos.y) return false;
+
+        return true;
+
     }
 
 
@@ -102,15 +185,29 @@ class Program
 
 
 
+    public static bool OneWayOnly(GridMapRect gMap, Vector2 pos, Vector2 originDir, out Vector2 onlyWay, List<Vector2> visited)
+    {
+        List<Vector2> dirs = new List<Vector2>(Vector2.CardinalDirections);
+        dirs.Remove(originDir*-1);
 
+        onlyWay = Vector2.Origo;
 
+        int possibleWays = 0;
 
+        foreach(Vector2 dir in dirs)
+        {
+            Vector2 cand = pos + dir;
+            if (!gMap.inBounds(cand)) continue;
+            if (gMap[cand] == '#') continue;
+            if(visited.Contains(cand)) continue;
+            possibleWays++;
+            onlyWay = dir; 
+        }
 
+        if (possibleWays != 1) onlyWay = Vector2.Origo;
 
-
-
-
-
+        return possibleWays == 1;
+    }
 
 
     public static int GetEnergized(GridMapRect gMap, (Vector2 pos, Vector2 dir) origo)
@@ -345,79 +442,6 @@ class Program
     
 
 
-
-    public static long Flipper(string input, List<int> limits, int pos, int currentLen, int finishedGroups)
-    {
-        long ans = 0;
-
-
-        if (input[pos] == '?')
-        {
-            char[] chars = input.ToCharArray();
-
-            chars[pos] = '#';
-            ans += Flipper(new string(chars), limits, pos, currentLen, finishedGroups);
-
-            chars[pos] = '.';
-            ans += Flipper(new string(chars), limits, pos, currentLen, finishedGroups);
-        }
-        else {
-
-            int newCurrentLen = input[pos] == '.' ? 0 : currentLen + 1;
-            int newFinishedGroup = finishedGroups + (input[pos] == '.' && currentLen > 0 ? 1 : 0);
-
-            //Console.WriteLine("from memory:" + memory[pos, newFinishedGroup, newCurrentLen]);
-
-            int isSpring = input[pos] == '#' ? 1 : 0;
-
-            if (memory[pos, finishedGroups, currentLen, isSpring] == -1)
-                return 0;
-            else if (memory[pos, finishedGroups, currentLen, isSpring] > 0) 
-               return memory[pos, finishedGroups, currentLen, isSpring];
-
-            if (input[pos] == '.')
-            {
-                List<int> newLimits = new List<int>(limits);
-                if (currentLen > 0)
-                {
-                    if (limits[0] != currentLen)
-                    {
-                        memory[pos, finishedGroups, currentLen, isSpring] = -1;
-                        return 0;
-                    }
-
-                    newLimits.RemoveAt(0);
-                }
-
-
-                if (pos == input.Length - 1)
-                {
-                    return (newLimits.Count == 0) ? 1 : 0;
-                }
-
-                ans += Flipper(input, newLimits, pos + 1, newCurrentLen, newFinishedGroup);
-            }
-            else if (input[pos] == '#')
-            {
-                if (limits.Count == 0 || newCurrentLen > limits[0])
-                {
-                    memory[pos, finishedGroups, currentLen, isSpring] = -1;
-                    return 0;
-                }
-
-                ans += Flipper(input, limits, pos + 1, newCurrentLen, newFinishedGroup);
-            }
-
-            if(ans == 0)
-                memory[pos, finishedGroups, currentLen, isSpring] = -1;
-            else
-                memory[pos, finishedGroups, currentLen, isSpring] = ans;
-
-        }
-        
-
-        return ans;
-    }
 
 
 

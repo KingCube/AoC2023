@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AoC2023", "AoC2023.csproj", "{7A43E4AA-50B7-4A9F-8A0B-C20F5061D8C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AoC2023", "AoC2023.csproj", "{7A43E4AA-50B7-4A9F-8A0B-C20F5061D8C8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NewFolder1", "NewFolder1", "{725767A0-39A7-490B-8680-4EE630605CE1}"
 EndProject
