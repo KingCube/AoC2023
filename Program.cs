@@ -26,49 +26,23 @@ class Program
         long sum = 0;
 
         List<string> map = new List<string>();
-        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day21_5x.txt");
+        StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\AoC2023\\Input\\day21_8.txt");
 
-        HashSet<Vector2> seen = new HashSet<Vector2>();
-        HashSet<Vector2> counted = new HashSet<Vector2>();
+        List<int> nums = new List<int>();
 
-
-        int cRow = 0;
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-            Vector2 start = new Vector2(input.Split(" -> ")[0],false);
-            Vector2 end = new Vector2(input.Split(" -> ")[1], false);
+            string[] output = input.Split(" | ")[1].Split(" ");
 
-            bool isDiagonal = start.x != end.x && start.y != end.y;
-
-            long minX = Math.Min(start.x, end.x);
-            long maxX = Math.Max(start.x, end.x);
-            long minY = Math.Min(start.y, end.y);
-            long maxY = Math.Max(start.y, end.y);
-
-            for (long i = 0; i <= Math.Max(maxX-minX, maxY-minY); i++)
-            {
-                Vector2 cur = new Vector2(
-                    minY + (minY == maxY ? 0 : i),
-                    minX + (minX == maxX ? 0 : i)
-                ) ;
-
-                
-                if (seen.Contains(cur) && !counted.Contains(cur))
-                {
-                    counted.Add(cur);
+            foreach (string s in output)
+                if (s.Length == 2 || s.Length == 4 || s.Length == 3 || s.Length == 7)
                     sum++;
-                }
-                else
-                    seen.Add(cur);
-            }
-
         }
 
-   
+      
+
         Console.WriteLine(sum);
-        Console.WriteLine("EoP");
-        Console.ReadKey();
     }
 
     public static int BinaryToInt(string data)
