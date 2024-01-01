@@ -64,6 +64,5 @@ public struct Vector2
         return a.y != b.y || a.x != b.x;
     }
 
-
 }
 

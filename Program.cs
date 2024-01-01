@@ -4,10 +4,13 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Globalization;
+using System.IO.Pipes;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
+using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Serialization;
@@ -17,30 +20,78 @@ using System.Text;
 using System.Threading;
 
 
-class Program
+public class Program
 {
-
     static void Main(string[] args)
     {
-     
         long sum = 0;
 
-        List<string> map = new List<string>();
-        StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\AoC2023\\Input\\day21_8.txt");
+        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day21_11.txt");
 
-        List<int> nums = new List<int>();
+        List<string> inputs = new List<string>();
+
 
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-            string[] output = input.Split(" | ")[1].Split(" ");
-
-            foreach (string s in output)
-                if (s.Length == 2 || s.Length == 4 || s.Length == 3 || s.Length == 7)
-                    sum++;
+            inputs.Add(input);
         }
 
-      
+        GridMapRect map = new GridMapRect(inputs);
+
+        for(int n = 0; n < 10000; n++)
+        {
+            HashSet<Vector2> allFlashes = new HashSet<Vector2>();
+            HashSet<Vector2> willFlash = new HashSet<Vector2>();
+            for (int i = 0; i < map.Rows; i++)
+            {
+                for (int j = 0; j < map.Cols; j++)
+                {
+                    Vector2 cur = new Vector2(i, j);
+                    if (map[cur] == '9')
+                    {
+                        allFlashes.Add(cur);
+                        willFlash.Add(cur);
+                    }
+                    else
+                        map[cur] = (char)(map[cur] + 1);
+                }
+            }
+
+            while(willFlash.Count != 0)
+            {
+                HashSet<Vector2> newWillFlash = new HashSet<Vector2>();
+                foreach(Vector2 v in willFlash)
+                {
+                    foreach(Vector2 dir in Vector2.Directions)
+                    {
+                        Vector2 newPos = v + dir;
+                        if (!map.inBounds(newPos) || allFlashes.Contains(newPos)) continue;
+
+                        if (map[newPos] == '9')
+                        {
+                            allFlashes.Add(newPos);
+                            newWillFlash.Add(newPos);
+                        }
+                        else
+                            map[newPos] = (char)(map[newPos] + 1);
+                    }
+                }
+
+                willFlash = newWillFlash;
+            }
+
+
+            if (allFlashes.Count == map.Cols * map.Rows)
+            {
+                Console.WriteLine(n+1);
+                break;
+            }
+            foreach (Vector2 v in allFlashes)
+                map[v] = '0';
+
+        }
+
 
         Console.WriteLine(sum);
     }
