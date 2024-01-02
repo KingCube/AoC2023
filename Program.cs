@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using AoC2023.Model._2021;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
@@ -26,74 +27,57 @@ public class Program
     {
         long sum = 0;
 
-        StreamReader sr = new StreamReader("C:\\Users\\andre\\Source\\Repos\\AoC2023\\Input\\day21_11.txt");
+        StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\AoC2023\\Input\\day21_12.txt");
 
         List<string> inputs = new List<string>();
-
+        Dictionary<string, CaveNode> caves = new Dictionary<string, CaveNode>();
 
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-            inputs.Add(input);
+            string[] ids = input.Split("-");
+
+            if (!caves.ContainsKey(ids[0]))
+                caves[ids[0]] = new CaveNode(ids[0]);
+
+            if (!caves.ContainsKey(ids[1]))
+                caves[ids[1]] = new CaveNode(ids[1]);
+
+            caves[ids[0]].conns.Add(caves[ids[1]]);
+            caves[ids[1]].conns.Add(caves[ids[0]]);
         }
 
-        GridMapRect map = new GridMapRect(inputs);
+        List<CaveNode> visited = new List<CaveNode>();
+        visited.Add(caves["start"]);
 
-        for(int n = 0; n < 10000; n++)
-        {
-            HashSet<Vector2> allFlashes = new HashSet<Vector2>();
-            HashSet<Vector2> willFlash = new HashSet<Vector2>();
-            for (int i = 0; i < map.Rows; i++)
-            {
-                for (int j = 0; j < map.Cols; j++)
-                {
-                    Vector2 cur = new Vector2(i, j);
-                    if (map[cur] == '9')
-                    {
-                        allFlashes.Add(cur);
-                        willFlash.Add(cur);
-                    }
-                    else
-                        map[cur] = (char)(map[cur] + 1);
-                }
-            }
-
-            while(willFlash.Count != 0)
-            {
-                HashSet<Vector2> newWillFlash = new HashSet<Vector2>();
-                foreach(Vector2 v in willFlash)
-                {
-                    foreach(Vector2 dir in Vector2.Directions)
-                    {
-                        Vector2 newPos = v + dir;
-                        if (!map.inBounds(newPos) || allFlashes.Contains(newPos)) continue;
-
-                        if (map[newPos] == '9')
-                        {
-                            allFlashes.Add(newPos);
-                            newWillFlash.Add(newPos);
-                        }
-                        else
-                            map[newPos] = (char)(map[newPos] + 1);
-                    }
-                }
-
-                willFlash = newWillFlash;
-            }
-
-
-            if (allFlashes.Count == map.Cols * map.Rows)
-            {
-                Console.WriteLine(n+1);
-                break;
-            }
-            foreach (Vector2 v in allFlashes)
-                map[v] = '0';
-
-        }
-
+        Console.WriteLine(FindPathsCaves(visited, caves["start"], false));
+       
 
         Console.WriteLine(sum);
+    }
+
+    public static int FindPathsCaves(List<CaveNode> visitedSmall, CaveNode cur, bool usedUpBonus)
+    {
+        if (cur.id == "end") return 1;
+
+        int paths = 0;
+        foreach(CaveNode conn in cur.conns) 
+        {
+            bool newUsedUpBonus = usedUpBonus;
+            if (visitedSmall.Contains(conn))
+            {
+                if (conn.id == "start") continue;
+                if (usedUpBonus) continue;
+                newUsedUpBonus = true;
+            }
+
+            List<CaveNode> newVisitedSmall = new List<CaveNode>(visitedSmall);
+            if(!conn.isLarge) newVisitedSmall.Add(conn);
+
+            paths += FindPathsCaves(newVisitedSmall, conn, newUsedUpBonus);
+        }
+
+        return paths;
     }
 
     public static int BinaryToInt(string data)
