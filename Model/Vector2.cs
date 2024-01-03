@@ -26,7 +26,7 @@ public struct Vector2
 
     public static List<Vector2> Directions = new List<Vector2>() { North, South, East, West, NW, NE, SW, SE };
 
-    public static List<Vector2> CardinalValues = new List<Vector2>() { Origo, North, South, East, West, NW, NE, SW, SE };
+    public static List<Vector2> DirectionsNull = new List<Vector2>() { Origo, North, South, East, West, NW, NE, SW, SE };
 
     public long x;
     public long y;
@@ -52,12 +52,12 @@ public struct Vector2
 
     public static Vector2 operator -(Vector2 a, Vector2 b) => new Vector2(a.y - b.y, a.x - b.x);
 
+    public static Vector2 operator *(Vector2 a, int mult) => new Vector2(a.y*mult, a.x*mult);
+
     public static bool operator ==(Vector2 a, Vector2 b)
     {
         return a.y == b.y && a.x == b.x;
     }
-
-    public static Vector2 operator *(Vector2 a, int mult) => new Vector2(a.y*mult, a.x*mult);
 
     public static bool operator !=(Vector2 a, Vector2 b)
     {

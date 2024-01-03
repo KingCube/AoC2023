@@ -27,33 +27,55 @@ public class Program
     {
         long sum = 0;
 
-        StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\AoC2023\\Input\\day21_12.txt");
+        StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\AoC2023\\Input\\day21_13.txt");
 
         List<string> inputs = new List<string>();
         Dictionary<string, CaveNode> caves = new Dictionary<string, CaveNode>();
 
+        bool atFolds = false;
+
+        HashSet<Vector2> marks = new HashSet<Vector2>();
+
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-            string[] ids = input.Split("-");
+            
+            if(input.Length == 0)
+            {
+                atFolds = true;
+                continue;
+            }
 
-            if (!caves.ContainsKey(ids[0]))
-                caves[ids[0]] = new CaveNode(ids[0]);
+            if (!atFolds)
+                marks.Add(new Vector2(input, false));
+            else
+            {
+                int foldVal = int.Parse(input.Substring(13));
+                if (input[11] == 'y')
+                {
+                    foreach(Vector2 m in marks.Where(v => v.y > foldVal).ToList())
+                        marks.Add(new Vector2(foldVal - (m.y - foldVal), m.x));
 
-            if (!caves.ContainsKey(ids[1]))
-                caves[ids[1]] = new CaveNode(ids[1]);
+                    marks.RemoveWhere(v => v.y >= foldVal);
+                }
+                else
+                {
+                    foreach (Vector2 m in marks.Where(v => v.x > foldVal).ToList())
+                        marks.Add(new Vector2(m.y, foldVal - (m.x - foldVal)));
 
-            caves[ids[0]].conns.Add(caves[ids[1]]);
-            caves[ids[1]].conns.Add(caves[ids[0]]);
+                    marks.RemoveWhere(v => v.x >= foldVal);
+
+                }
+            }
         }
 
-        List<CaveNode> visited = new List<CaveNode>();
-        visited.Add(caves["start"]);
+        GridMapRect map = new GridMapRect(marks.Select(v => v.y).Max() +1, marks.Select(v => v.x).Max()+1, '.');
+        foreach (Vector2 v in marks)
+            map[v] = '#';
 
-        Console.WriteLine(FindPathsCaves(visited, caves["start"], false));
-       
+        map.Print();
 
-        Console.WriteLine(sum);
+        Console.WriteLine(marks.Count());
     }
 
     public static int FindPathsCaves(List<CaveNode> visitedSmall, CaveNode cur, bool usedUpBonus)
@@ -205,10 +227,10 @@ public class Program
 
         foreach(Vector2 dir in dirs)
         {
-            Vector2 cand = pos + dir;
-            if (!gMap.inBounds(cand)) continue;
-            if (gMap[cand] == '#') continue;
-            if(visited.Contains(cand)) continue;
+            Vector2 newPos = pos + dir;
+            if (!gMap.inBounds(newPos)) continue;
+            if (gMap[newPos] == '#') continue;
+            if(visited.Contains(newPos)) continue;
             possibleWays++;
             onlyWay = dir; 
         }

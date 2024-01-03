@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 public class GridMapRect
@@ -22,6 +23,14 @@ public class GridMapRect
         for (int i = 0; i < strings.Count; i++)
             for(int j = 0; j < strings[i].Length; j++)
                 map[i,j] = strings[i][j];
+    }
+
+    public GridMapRect(long rows, long cols, char init)
+    {
+        map = new char[rows, cols];
+        for (int i = 0; i < map.GetLength(0); i++)
+            for (int j = 0; j < map.GetLength(1); j++)
+                map[i,j] = init;
     }
 
 
