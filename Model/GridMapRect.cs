@@ -34,7 +34,11 @@ public class GridMapRect
     }
 
 
-    public char this[int y, int x] => map[y, x];
+    public char this[int y, int x]
+    {
+        get => map[y, x];
+        set => map[y, x] = value;
+    }
 
     public int Rows => map.GetLength(0);
     public int Cols => map.GetLength(1);

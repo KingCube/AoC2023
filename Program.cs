@@ -1,6 +1,7 @@
 ﻿using AoC2023.Model._2021;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
@@ -27,55 +28,43 @@ public class Program
     {
         long sum = 0;
 
-        StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\AoC2023\\Input\\day21_13.txt");
+        StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\KingCube\\AoC2023\\Input\\day21_17.txt");
 
-        List<string> inputs = new List<string>();
-        Dictionary<string, CaveNode> caves = new Dictionary<string, CaveNode>();
-
-        bool atFolds = false;
-
-        HashSet<Vector2> marks = new HashSet<Vector2>();
 
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-            
-            if(input.Length == 0)
+        }
+
+        Vector2 LowLims = new Vector2(-248, 29);
+        Vector2 MaxLims = new Vector2(-194, 73);
+        //Vector2 LowLims = new Vector2(-10, 20);
+        //Vector2 MaxLims = new Vector2(-5, 30);
+
+        for (long i = LowLims.y; i < -LowLims.y; i++)
+        {
+            for(int j = 0; j <= MaxLims.x; j++)
             {
-                atFolds = true;
-                continue;
-            }
-
-            if (!atFolds)
-                marks.Add(new Vector2(input, false));
-            else
-            {
-                int foldVal = int.Parse(input.Substring(13));
-                if (input[11] == 'y')
+                int vY = (int)i;
+                int vX = (int)j;
+                int y = 0;
+                int x = 0;
+                while(y > LowLims.y && x < MaxLims.x)
                 {
-                    foreach(Vector2 m in marks.Where(v => v.y > foldVal).ToList())
-                        marks.Add(new Vector2(foldVal - (m.y - foldVal), m.x));
+                    y += vY--;
+                    x += Math.Max(vX--, 0);
 
-                    marks.RemoveWhere(v => v.y >= foldVal);
-                }
-                else
-                {
-                    foreach (Vector2 m in marks.Where(v => v.x > foldVal).ToList())
-                        marks.Add(new Vector2(m.y, foldVal - (m.x - foldVal)));
-
-                    marks.RemoveWhere(v => v.x >= foldVal);
-
+                    if (x >= LowLims.x && x <= MaxLims.x && y >= LowLims.y && y <= MaxLims.y)
+                    {
+                        sum++;
+                        break;
+                    }
                 }
             }
         }
 
-        GridMapRect map = new GridMapRect(marks.Select(v => v.y).Max() +1, marks.Select(v => v.x).Max()+1, '.');
-        foreach (Vector2 v in marks)
-            map[v] = '#';
-
-        map.Print();
-
-        Console.WriteLine(marks.Count());
+        Console.WriteLine(sum);
+        Console.ReadKey();
     }
 
     public static int FindPathsCaves(List<CaveNode> visitedSmall, CaveNode cur, bool usedUpBonus)
