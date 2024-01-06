@@ -30,38 +30,37 @@ public class Program
 
         StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\KingCube\\AoC2023\\Input\\day21_17.txt");
 
+        Dictionary<char, string> toBinary = new Dictionary<char, string>()
+        {
+            {'0'," 0000"},
+            {'1'," 0001"},
+            {'2'," 0010"},
+            {'3'," 0011"},
+            {'4'," 0100"},
+            {'5'," 0101"},
+            {'6'," 0110"},
+            {'7'," 0111"},
+            {'8'," 1000"},
+            {'9'," 1001"},
+            {'A'," 1010"},
+            {'B'," 1011"},
+            {'C'," 1100"},
+            {'D'," 1101"},
+            {'E'," 1110"},
+            {'F', "1111"},
+        };
 
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
+            input = "D2FE28";
+
+            StringBuilder sb = new StringBuilder();
+
+            for(int i = 0 )
         }
 
-        Vector2 LowLims = new Vector2(-248, 29);
-        Vector2 MaxLims = new Vector2(-194, 73);
-        //Vector2 LowLims = new Vector2(-10, 20);
-        //Vector2 MaxLims = new Vector2(-5, 30);
-
-        for (long i = LowLims.y; i < -LowLims.y; i++)
-        {
-            for(int j = 0; j <= MaxLims.x; j++)
-            {
-                int vY = (int)i;
-                int vX = (int)j;
-                int y = 0;
-                int x = 0;
-                while(y > LowLims.y && x < MaxLims.x)
-                {
-                    y += vY--;
-                    x += Math.Max(vX--, 0);
-
-                    if (x >= LowLims.x && x <= MaxLims.x && y >= LowLims.y && y <= MaxLims.y)
-                    {
-                        sum++;
-                        break;
-                    }
-                }
-            }
-        }
+        
 
         Console.WriteLine(sum);
         Console.ReadKey();
