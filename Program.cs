@@ -32,40 +32,10 @@ public class Program
 
         StreamReader sr = new StreamReader("..\\..\\..\\Input\\day21_18x.txt");
 
-        Dictionary<char, string> toBinary = new Dictionary<char, string>()
-        {
-            {'0',"0000"},
-            {'1',"0001"},
-            {'2',"0010"},
-            {'3',"0011"},
-            {'4',"0100"},
-            {'5',"0101"},
-            {'6',"0110"},
-            {'7',"0111"},
-            {'8',"1000"},
-            {'9',"1001"},
-            {'A',"1010"},
-            {'B',"1011"},
-            {'C',"1100"},
-            {'D',"1101"},
-            {'E',"1110"},
-            {'F', "1111"},
-        };
-
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
-            //input = "8A004A801A8002F478";
-
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < input.Length; i++)
-                sb.Append(toBinary[input[i]]);
-
-            string newInput = sb.ToString();
-
-            (int cur, BigInteger val) outcome = ParsePacket(newInput, 0);
-            Console.WriteLine(outcome.val);
+            
         }
 
         
