@@ -24,47 +24,129 @@ using System.Threading;
 
 public class Program
 {
+    static List<PacketInfo> packets = new List<PacketInfo>();
+
     static void Main(string[] args)
     {
         long sum = 0;
 
         StreamReader sr = new StreamReader("..\\..\\..\\Input\\day21_18x.txt");
 
+        Dictionary<char, string> toBinary = new Dictionary<char, string>()
+        {
+            {'0',"0000"},
+            {'1',"0001"},
+            {'2',"0010"},
+            {'3',"0011"},
+            {'4',"0100"},
+            {'5',"0101"},
+            {'6',"0110"},
+            {'7',"0111"},
+            {'8',"1000"},
+            {'9',"1001"},
+            {'A',"1010"},
+            {'B',"1011"},
+            {'C',"1100"},
+            {'D',"1101"},
+            {'E',"1110"},
+            {'F', "1111"},
+        };
 
         while (!sr.EndOfStream)
         {
             string input = sr.ReadLine();
+            //input = "8A004A801A8002F478";
+
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < input.Length; i++)
+                sb.Append(toBinary[input[i]]);
+
+            string newInput = sb.ToString();
+
+            (int cur, BigInteger val) outcome = ParsePacket(newInput, 0);
+            Console.WriteLine(outcome.val);
         }
 
-        Vector2 LowLims = new Vector2(-248, 29);
-        Vector2 MaxLims = new Vector2(-194, 73);
-        //Vector2 LowLims = new Vector2(-10, 20);
-        //Vector2 MaxLims = new Vector2(-5, 30);
-
-        for (long i = LowLims.y; i < -LowLims.y; i++)
-        {
-            for(int j = 0; j <= MaxLims.x; j++)
-            {
-                int vY = (int)i;
-                int vX = (int)j;
-                int y = 0;
-                int x = 0;
-                while(y > LowLims.y && x < MaxLims.x)
-                {
-                    y += vY--;
-                    x += Math.Max(vX--, 0);
-
-                    if (x >= LowLims.x && x <= MaxLims.x && y >= LowLims.y && y <= MaxLims.y)
-                    {
-                        sum++;
-                        break;
-                    }
-                }
-            }
-        }
+        
 
         Console.WriteLine(sum);
         Console.ReadKey();
+    }
+
+    public static (int cursor, BigInteger val) ParsePacket(string packet, int cursor) 
+    {
+        PacketInfo info = new PacketInfo();
+        info.version = (int)BinaryToInt(packet.Substring(cursor, 3));
+        info.type = (int)BinaryToInt(packet.Substring(cursor+3, 3));
+        cursor += 6;
+        BigInteger value = 0;
+
+        if(info.type == 4)
+        {
+            // if literal
+            StringBuilder binVal = new StringBuilder();
+            while (true)
+            {
+                bool finalBit = packet[cursor++] == '0';
+                binVal.Append(packet.Substring(cursor, 4));
+                cursor += 4;
+                if (finalBit) break;
+            }
+            value = BinaryToInt(binVal.ToString());
+        }
+        else
+        {
+            List<BigInteger> values = new List<BigInteger>();
+            // check if length or nums
+            bool lenBits = packet[cursor++] == '0';
+            if (lenBits)
+            {
+                long nrBits = BinaryToInt(packet.Substring(cursor, 15));
+                cursor += 15;
+
+                long endCursor = cursor + nrBits;
+                while(endCursor != cursor)
+                {
+                    (int cur, BigInteger val) outcome = ParsePacket(packet, cursor);
+                    cursor = outcome.cur;
+                    values.Add(outcome.val);
+                }
+            }
+            else
+            {
+                long nrPacks = BinaryToInt(packet.Substring(cursor, 11));
+                cursor += 11;
+
+                while(nrPacks-- > 0)
+                {
+                    (int cur, BigInteger val) outcome = ParsePacket(packet, cursor);
+                    cursor = outcome.cur;
+                    values.Add(outcome.val);
+                }
+            }
+
+            if (info.type == 0)
+                values.ForEach(x=> value+=x);
+            else if (info.type == 1)
+            {
+                value = 1;
+                values.ForEach(p => value *= p);
+            }
+            else if (info.type == 2)
+                value = values.Min();
+            else if (info.type == 3)
+                value = values.Max();
+            else if (info.type == 5)
+                value = values[0] > values[1] ? 1 : 0;
+            else if (info.type == 6)
+                value = values[0] < values[1] ? 1 : 0;
+            else if (info.type == 7)
+                value = values[0] == values[1] ? 1 : 0;
+        }
+
+        packets.Add(info);
+        return (cursor, value);
     }
 
     public static int FindPathsCaves(List<CaveNode> visitedSmall, CaveNode cur, bool usedUpBonus)
@@ -91,14 +173,14 @@ public class Program
         return paths;
     }
 
-    public static int BinaryToInt(string data)
+    public static long BinaryToInt(string data)
     {
-        Console.WriteLine("Calculating binary on:" + data);
-        int sum = 0;
+        //Console.WriteLine("Calculating binary on:" + data);
+        long sum = 0;
         for (int i = 0; i < data.Length; i++)
         {
             int c = data.Length - i - 1;
-            sum += int.Parse(data[c].ToString())*(int)Math.Pow(2, i);
+            sum += int.Parse(data[c].ToString())*(long)Math.Pow(2, i);
         }
         return sum;
     }
