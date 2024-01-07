@@ -28,7 +28,7 @@ public class Program
     {
         long sum = 0;
 
-        StreamReader sr = new StreamReader("C:\\Users\\Seth\\source\\repos\\KingCube\\AoC2023\\Input\\day21_17.txt");
+        StreamReader sr = new StreamReader("..\\..\\..\\Input\\day21_18x.txt");
 
 
         while (!sr.EndOfStream)
